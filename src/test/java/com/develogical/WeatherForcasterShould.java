@@ -7,6 +7,7 @@ import com.weather.Region;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.Date;
 import java.util.Random;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -70,6 +71,30 @@ public class WeatherForcasterShould {
         testObject.forecast(Region.EDINBURGH, Day.WEDNESDAY);
         verifyNoMoreInteractions(mockForecaster);
 
+    }
+
+    @Test
+    public void willOnlyCacheWithinLimitedTime() throws Exception {
+        // options
+        // 1. override test object- getNow
+
+        testObject = new CachingWeatherService(mockForecaster, 3) {
+            boolean flag = true;
+            @Override
+            public Date getNow() {
+                if (flag) {
+                    flag = false;
+                    return new Date(System.currentTimeMillis() - 3600 * 1000);
+                } else {
+                    return super.getNow();
+                }
+            }
+        };
+
+        Forecast testForcast = new Forecast("TestNew123123123", 79);
+        testObject.forecast(Region.LONDON, Day.MONDAY);
+        testObject.forecast(Region.LONDON, Day.MONDAY);
+        verify(mockForecaster, Mockito.times(2)).forecastFor(any(), any());
     }
 
 }
